@@ -4,6 +4,7 @@
 # - Dealer with deck and playstyle
 # - Maybe Low Level CPU
 from player import Player
+from dealer import Dealer
 import random
 random.seed(0)
 
@@ -41,81 +42,26 @@ def cut_deck(deck, index):
     new_deck = deck[index:] + deck[:index]
     return new_deck
 
-class Dealer():
-    def __init__(self, deck):
-        self.name = "Dealer"
-        self.deck = deck
-        self.hand = []
-        self.seventeen_rule = None
-        self.points = 0
-        self.pot = 0
-        self.action = None
-        self.has_bust = False
-        self.has_bj = False
-    
-    def deal_hands(self, player_list):
-        total_out = 0
-        while total_out < len(player_list) * 2:
-            for player in player_list:
-                player.hand.append(self.deal_card())
-                total_out += 1    
-    
-    def deal_card(self):
-        card = self.deck.pop()
-        return card
-    
-    def dealer_action(self):
-        if self.points < 17:
-            print("Dealer hits...")
-            card = self.deal_card()
-            self.hit(card)
-            return True
-        else:
-            print("Dealer Stays")
-            return False
-        
-    def hit(self, card):
-        self.hand.append(card)
-    
-    def add_to_pot(self, bet):
-        self.pot = 2*bet
 
-    def reset(self):
-        self.pot = 0
-        self.hand = []
-        self.points = 0
-        self.has_bust = False
-        self.has_bj = False
-    
-    def print_hand(self):
-        output = ""
-        # output = self.hand[0][0] + " of " + self.hand[0][1]
-        for card in self.hand:
-            output += f"{card[0]} of {card[1]} "
-            
-        print(output)
-
-def calc_points(hand):
+def calc_points(player):
+    hand = player.hand
     total = 0
     for card in hand:
-        if card[0] is "Ace":
-            ace_val = input("Ace high or low:  ")
-            if ace_val == "high":
+        if card[0] == "Ace":
+            if player.ace_high:
                 total += 11
             else:
                 total += 1
+            # ace_val = input("Ace high or low:  ")
+            # if ace_val == "high":
+            #     total += 11
+            # else:
+            #     total += 1
         else:
             total += card_to_val_dict[card[0]]
     return total
 
-
-test_deck = shuffle_deck(make_deck(suits, cards))
-
-dealer = Dealer(test_deck)
-player1 = Player("Zack", 100)
-player_list = [dealer, player1]
-
-def action_match(player, action):
+def action_match(player, dealer, action):
     match action:
         case "stay":
             player.stand()
@@ -128,7 +74,7 @@ def action_match(player, action):
             return False
         
 def checker(player):
-    points = calc_points(player.hand)
+    points = calc_points(player)
     player.points = points
     if points > 21:
         print(f"Player {player.name} has bust")
@@ -138,70 +84,123 @@ def checker(player):
         print(f"Player {player.name} has Blackjack")
         print(f"Player hand: {player.hand}")
     
-def action_loop(player_list):
+def action_loop(player_list, dealer):
     for player in player_list:
         checker(player)
         if isinstance(player, Dealer):
             player.dealer_action()
         else:
             action = input("Player Action: ")
-            action_match(player, action)
+            action_match(player, dealer, action)
         checker(player)
     
 def first_check(player_list):
     for player in player_list:
         if player.points == 21:
+            player.has_bj = True
             print(f"{player.name} has BlackJack!")
             return True
     return False
 
+def place_bets(player, dealer, bet):
+    player.place_bet(bet)
+    dealer.add_to_pot(bet)
+    print(f"The pot sits at {dealer.pot}")
+    
+
+test_deck = shuffle_deck(make_deck(suits, cards))
+
+dealer = Dealer(test_deck)
+player1 = Player("Zack", 100)
+player_list = [dealer, player1]
 i = 1
 
 while True:
+    #1. Resetting the Table
     for player in player_list:
         player.reset()
     
+    #2. Placing bets
+    print(f"--- How much are you betting?? ---")
+    while True:
+        try:
+            bet = int(input("Bet Amount: "))
+            if bet > player1.chips:
+                print("Cannot bet more than you have!!!")
+            else:
+                break
+        except ValueError:
+            print("Bet has to be an int!!!")
+     
+    place_bets(player1, dealer, bet)
+    
+    #3. Dealing Hands to all Players
     print(f"--- Dealing Hand #{i} ---")
     dealer.deal_hands(player_list)
+    
     print("--- Current Hands ---")
+    # 4. Checking for BlackJack on starting Hands
+    flag = False
     for player in player_list:
+        if flag:
+            break
+        
         print(f"Player Hand: {player.name}")
         player.print_hand()
         checker(player)
         if player.has_bj:
+            flag = True
             break
-        
-        if player.has_bust:
-            print(f"Player {player.name} has bust")
-            no_bust = False
-            break
-        
+        player.ace_high = False
+
+    print("------------------")
     # no_bust = first_check(player_list)
-    # Player Loop
+    #5. Player Loop
     player_turn = True
     while player_turn:
         player1.action = input("Player action: ")
-        player_turn = action_match(player1, player1.action)
+        player_turn = action_match(player1, dealer, player1.action)
         player1.print_hand()
         checker(player1)
         if player1.has_bust:
-            print(f"Player {player1.name} has bust")
             break
     
+    print("------------------")
+    #6. Dealer Turn
     if not player1.has_bust:
         dealer_turn = True
         while dealer_turn:
             dealer_turn = dealer.dealer_action()
             checker(dealer)
             if dealer.has_bust:
-                print(f"Dealer has bust")
                 break
         
+    print("------------------")
+    #7. Checking Winner
     if dealer.points > player1.points or player1.has_bust == True:
         print("!!! Dealer Wins !!!")
+        print(f"Dealer's Hand: {dealer.print_hand()}")
+        print(f"Dealer's Total: {dealer.points}")
+        print(f"{player1.name}'s Hand: {player1.print_hand()}")
+        print(f"{player1.name}'s Total: {player1.points}")
+        print(f"{player1.name}'s Chips: {player1.chips}")
     else:
         print("!!! Player Wins !!!")
-        
+        print(f"Dealer's Hand: {dealer.print_hand()}")
+        print(f"Dealer's Total: {dealer.points}")
+        print(f"{player1.name}'s Hand: {player1.print_hand()}")
+        print(f"{player1.name}'s Total: {player1.points}")
+        player1.chips += dealer.pot
+        print(f"{player1.name}'s Chips: {player1.chips}")
+    
+    print("------------------")
+    #8. Player's current chips
+    if player1.chips <= 0:
+        print(f"--- {player1.name} has no more chips!!! ---")
+        print("--- GAME OVER ---")
+        break
+    
+    #9. Play Again
     again = input("Play another hand?... ")
     if again == "n":
         break

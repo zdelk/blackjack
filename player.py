@@ -11,6 +11,7 @@ class Player():
                             }
         self.has_bust = False
         self.has_bj = False
+        self.ace_high = True
     
     # def choose_action(self, action):
     #     self.action = self.action_dict[action]
@@ -23,7 +24,8 @@ class Player():
             
     def place_bet(self, bet):
         self.chips -= bet
-        
+        print(f"{self.name} bets {bet}")
+    
     def hit(self, card):
         self.hand.append(card)
     
@@ -40,13 +42,15 @@ class Player():
         output = ""
         # output = self.hand[0][0] + " of " + self.hand[0][1]
         for card in self.hand:
-            output += f"{card[0]} of {card[1]} "
+            output += f"|{card[0]} of {card[1]}| "
             
         print(output)
+        return output
         
     def reset(self):
         self.hand = []
         self.points = 0
         self.has_bust = False
         self.has_bj = False
+        self.ace_high = True
         
