@@ -6,6 +6,7 @@
 from player import Player
 from dealer import Dealer
 import random
+import time
 random.seed(0)
 
 suits = ["Hearts", "Diamonds", "Clubs", "Spades"]
@@ -110,16 +111,22 @@ def place_bets(player, dealer, bet):
 
 test_deck = shuffle_deck(make_deck(suits, cards))
 
+
+
+print(f"--- Welcome to BlackJack in Python ---")
+plyr_name = input("What is your name?... ")
+print(f"--- Hello {plyr_name}. You'll be starting with 100 chips ---")
+print("--- Play as long as you'd like or until you run out of chips ---")
+
 dealer = Dealer(test_deck)
-player1 = Player("Zack", 100)
+player1 = Player(plyr_name, 100)
 player_list = [dealer, player1]
 i = 1
-
 while True:
     #1. Resetting the Table
     for player in player_list:
         player.reset()
-    
+    print("\n#######################################\n") 
     #2. Placing bets
     print(f"--- How much are you betting?? ---")
     while True:
@@ -137,8 +144,8 @@ while True:
     #3. Dealing Hands to all Players
     print(f"--- Dealing Hand #{i} ---")
     dealer.deal_hands(player_list)
-    
-    print("--- Current Hands ---")
+    time.sleep(0.5)
+    print("--- Starting Hands ---")
     # 4. Checking for BlackJack on starting Hands
     flag = False
     for player in player_list:
@@ -157,43 +164,44 @@ while True:
     # no_bust = first_check(player_list)
     #5. Player Loop
     player_turn = True
-    while player_turn:
+    while player_turn and not player1.has_bj:
         player1.action = input("Player action: ")
         player_turn = action_match(player1, dealer, player1.action)
         player1.print_hand()
         checker(player1)
         if player1.has_bust:
             break
+        time.sleep(0.5)
     
-    print("------------------")
+    print("\n#######################################\n") 
     #6. Dealer Turn
-    if not player1.has_bust:
+    if not player1.has_bust and not player1.has_bj:
         dealer_turn = True
         while dealer_turn:
             dealer_turn = dealer.dealer_action()
             checker(dealer)
             if dealer.has_bust:
                 break
+            time.sleep(0.5)
         
     print("------------------")
     #7. Checking Winner
+    print(f"Dealer's Hand: {dealer.print_hand()}")
+    print("------------------")
+    print(f"{player1.name}'s Hand: {player1.print_hand()}")
+    time.sleep(0.5)
+    print("\n////////////////////////////\n")
+    
     if dealer.points > player1.points or player1.has_bust == True:
         print("!!! Dealer Wins !!!")
-        print(f"Dealer's Hand: {dealer.print_hand()}")
-        print(f"Dealer's Total: {dealer.points}")
-        print(f"{player1.name}'s Hand: {player1.print_hand()}")
-        print(f"{player1.name}'s Total: {player1.points}")
+        # print(f"{player1.name}'s Total: {player1.points}")
         print(f"{player1.name}'s Chips: {player1.chips}")
     else:
         print("!!! Player Wins !!!")
-        print(f"Dealer's Hand: {dealer.print_hand()}")
-        print(f"Dealer's Total: {dealer.points}")
-        print(f"{player1.name}'s Hand: {player1.print_hand()}")
-        print(f"{player1.name}'s Total: {player1.points}")
         player1.chips += dealer.pot
         print(f"{player1.name}'s Chips: {player1.chips}")
     
-    print("------------------")
+    print("\n------------------\n")
     #8. Player's current chips
     if player1.chips <= 0:
         print(f"--- {player1.name} has no more chips!!! ---")
@@ -205,6 +213,7 @@ while True:
     if again == "n":
         break
     
+    print("\n#######################################\n") 
     i+=1
     
     
