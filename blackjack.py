@@ -117,7 +117,9 @@ print(f"--- Welcome to BlackJack in Python ---")
 plyr_name = input("What is your name?... ")
 print(f"--- Hello {plyr_name}. You'll be starting with 100 chips ---")
 print("--- Play as long as you'd like or until you run out of chips ---")
-
+time.sleep(0.5)
+print("\n--- You can choose to 'hit' - get another card   ---")
+print("--- or 'stay' - keep your hand                   ---\n")
 dealer = Dealer(test_deck)
 player1 = Player(plyr_name, 100)
 player_list = [dealer, player1]
